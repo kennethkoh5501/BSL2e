@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/bsl2e/static/css/main.e6c13ad2.css",
+    "main.js": "/bsl2e/static/js/main.6d0780ef.js",
+    "index.html": "/bsl2e/index.html",
+    "main.e6c13ad2.css.map": "/bsl2e/static/css/main.e6c13ad2.css.map",
+    "main.6d0780ef.js.map": "/bsl2e/static/js/main.6d0780ef.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.6d0780ef.js"
+  ]
+}
