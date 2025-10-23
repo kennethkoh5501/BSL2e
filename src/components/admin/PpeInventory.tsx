@@ -30,7 +30,7 @@ export default function PpeInventory() {
   const firebaseInitError = getFirebaseInitializationError();
   const [inventory, setInventory] = useState<InventoryRecord[]>([]);
   const [newItemName, setNewItemName] = useState("");
-  const [newQuantity, setNewQuantity] = useState(0);
+  const [newQuantity, setNewQuantity] = useState("0");
   const [newBatch, setNewBatch] = useState("");
   const [newSupplier, setNewSupplier] = useState("");
   const [newExpiry, setNewExpiry] = useState("");
@@ -99,7 +99,12 @@ export default function PpeInventory() {
     event.preventDefault();
     setError(null);
 
-    if (!newItemName || newQuantity <= 0) {
+    const parsedQuantity = Number(newQuantity);
+    const normalizedQuantity = Number.isFinite(parsedQuantity)
+      ? Math.max(0, Math.floor(parsedQuantity))
+      : NaN;
+
+    if (!newItemName || !Number.isFinite(parsedQuantity) || normalizedQuantity <= 0) {
       setError("Item name and positive quantity are required.");
       return;
     }
@@ -116,7 +121,7 @@ export default function PpeInventory() {
 
       await addDoc(collection(firestore, "ppe_inventory"), {
         itemName: newItemName,
-        quantity: newQuantity,
+        quantity: normalizedQuantity,
         batchNo: newBatch || null,
         supplier: newSupplier || null,
         expiryDate: newExpiry ? Timestamp.fromDate(new Date(newExpiry)) : null,
@@ -124,7 +129,7 @@ export default function PpeInventory() {
       });
       await addAuditEntry("Add PPE Item", newItemName);
       setNewItemName("");
-      setNewQuantity(0);
+      setNewQuantity("0");
       setNewBatch("");
       setNewSupplier("");
       setNewExpiry("");
@@ -208,7 +213,7 @@ export default function PpeInventory() {
               type="number"
               min={0}
               value={newQuantity}
-              onChange={(event) => setNewQuantity(Number(event.target.value))}
+              onChange={(event) => setNewQuantity(event.target.value)}
               className="mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </label>
