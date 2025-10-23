@@ -44,18 +44,30 @@ export default function PathogenRules() {
 
     setError(null);
     const rulesQuery = query(collection(firestore, "pathogen_rules"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(rulesQuery, (snapshot) => {
-      const data = snapshot.docs.map((snapshotDoc) => {
-        const raw = snapshotDoc.data();
-        return {
-          id: snapshotDoc.id,
-          pathogenA: typeof raw.pathogenA === "string" ? raw.pathogenA : "",
-          pathogenB: typeof raw.pathogenB === "string" ? raw.pathogenB : "",
-          createdAt: raw.createdAt instanceof Timestamp ? raw.createdAt : undefined
-        } satisfies RuleRecord;
-      });
-      setRules(data.filter((rule) => rule.pathogenA && rule.pathogenB));
-    });
+    const unsubscribe = onSnapshot(
+      rulesQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((snapshotDoc) => {
+          const raw = snapshotDoc.data();
+          return {
+            id: snapshotDoc.id,
+            pathogenA: typeof raw.pathogenA === "string" ? raw.pathogenA : "",
+            pathogenB: typeof raw.pathogenB === "string" ? raw.pathogenB : "",
+            createdAt: raw.createdAt instanceof Timestamp ? raw.createdAt : undefined
+          } satisfies RuleRecord;
+        });
+        setRules(data.filter((rule) => rule.pathogenA && rule.pathogenB));
+      },
+      (snapshotError) => {
+        console.warn(snapshotError);
+        setError(
+          getFirebaseErrorMessage(
+            snapshotError,
+            "Unable to load pathogen rules. Check Firestore permissions."
+          )
+        );
+      }
+    );
     return () => unsubscribe();
   }, [firestore, firebaseInitError]);
 

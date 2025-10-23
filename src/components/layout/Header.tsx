@@ -5,19 +5,43 @@ import UserGuideModal from "@/components/modals/UserGuideModal";
 
 const STORAGE_KEY = "labwatch.userGuideDismissed";
 
+function getGuideDismissed(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) === "true";
+  } catch (storageError) {
+    console.warn("Unable to read user guide preference", storageError);
+    return false;
+  }
+}
+
+function persistGuideDismissed() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(STORAGE_KEY, "true");
+  } catch (storageError) {
+    console.warn("Unable to persist user guide preference", storageError);
+  }
+}
+
 export default function Header() {
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
-    const dismissed = window.localStorage.getItem(STORAGE_KEY);
-    if (!dismissed) {
+    if (!getGuideDismissed()) {
       setShowGuide(true);
     }
   }, []);
 
   const closeGuide = () => {
     setShowGuide(false);
-    window.localStorage.setItem(STORAGE_KEY, "true");
+    persistGuideDismissed();
   };
 
   return (

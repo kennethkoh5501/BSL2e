@@ -50,21 +50,33 @@ export default function PpeInventory() {
 
     setError(null);
     const inventoryQuery = query(collection(firestore, "ppe_inventory"), orderBy("itemName", "asc"));
-    const unsubscribe = onSnapshot(inventoryQuery, (snapshot) => {
-      const data = snapshot.docs.map((snapshotDoc) => {
-        const raw = snapshotDoc.data();
-        return {
-          id: snapshotDoc.id,
-          itemName: typeof raw.itemName === "string" ? raw.itemName : "",
-          quantity: typeof raw.quantity === "number" ? raw.quantity : 0,
-          batchNo: typeof raw.batchNo === "string" ? raw.batchNo : null,
-          supplier: typeof raw.supplier === "string" ? raw.supplier : null,
-          expiryDate: raw.expiryDate instanceof Timestamp ? raw.expiryDate : null,
-          lastUpdated: raw.lastUpdated instanceof Timestamp ? raw.lastUpdated : null
-        } satisfies InventoryRecord;
-      });
-      setInventory(data);
-    });
+    const unsubscribe = onSnapshot(
+      inventoryQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((snapshotDoc) => {
+          const raw = snapshotDoc.data();
+          return {
+            id: snapshotDoc.id,
+            itemName: typeof raw.itemName === "string" ? raw.itemName : "",
+            quantity: typeof raw.quantity === "number" ? raw.quantity : 0,
+            batchNo: typeof raw.batchNo === "string" ? raw.batchNo : null,
+            supplier: typeof raw.supplier === "string" ? raw.supplier : null,
+            expiryDate: raw.expiryDate instanceof Timestamp ? raw.expiryDate : null,
+            lastUpdated: raw.lastUpdated instanceof Timestamp ? raw.lastUpdated : null
+          } satisfies InventoryRecord;
+        });
+        setInventory(data);
+      },
+      (snapshotError) => {
+        console.warn(snapshotError);
+        setError(
+          getFirebaseErrorMessage(
+            snapshotError,
+            "Unable to load PPE inventory. Check Firestore permissions."
+          )
+        );
+      }
+    );
     return () => unsubscribe();
   }, [firestore, firebaseInitError]);
 

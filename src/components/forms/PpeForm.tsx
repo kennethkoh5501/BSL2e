@@ -47,20 +47,32 @@ export default function PpeForm() {
 
     setError(null);
     const inventoryRef = collection(firestore, "ppe_inventory");
-    const unsubscribe = onSnapshot(inventoryRef, (snapshot) => {
-      const data = snapshot.docs.map((snapshotDoc) => {
-        const raw = snapshotDoc.data();
-        return {
-          id: snapshotDoc.id,
-          itemName: typeof raw.itemName === "string" ? raw.itemName : "",
-          quantity: typeof raw.quantity === "number" ? raw.quantity : 0,
-          batchNo: typeof raw.batchNo === "string" ? raw.batchNo : null,
-          expiryDate: raw.expiryDate instanceof Timestamp ? raw.expiryDate : null,
-          supplier: typeof raw.supplier === "string" ? raw.supplier : null
-        } satisfies InventoryItem;
-      });
-      setInventory(data.filter((item) => item.itemName));
-    });
+    const unsubscribe = onSnapshot(
+      inventoryRef,
+      (snapshot) => {
+        const data = snapshot.docs.map((snapshotDoc) => {
+          const raw = snapshotDoc.data();
+          return {
+            id: snapshotDoc.id,
+            itemName: typeof raw.itemName === "string" ? raw.itemName : "",
+            quantity: typeof raw.quantity === "number" ? raw.quantity : 0,
+            batchNo: typeof raw.batchNo === "string" ? raw.batchNo : null,
+            expiryDate: raw.expiryDate instanceof Timestamp ? raw.expiryDate : null,
+            supplier: typeof raw.supplier === "string" ? raw.supplier : null
+          } satisfies InventoryItem;
+        });
+        setInventory(data.filter((item) => item.itemName));
+      },
+      (snapshotError) => {
+        console.warn(snapshotError);
+        setError(
+          getFirebaseErrorMessage(
+            snapshotError,
+            "Unable to load PPE inventory. Check Firestore permissions."
+          )
+        );
+      }
+    );
     return () => unsubscribe();
   }, [firestore, firebaseInitError]);
 

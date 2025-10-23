@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getFirebaseInitializationError, getFirestoreDb } from "@/lib/firebase";
 import { formatTimestamp } from "@/utils/formatTimestamp";
+import { getFirebaseErrorMessage } from "@/utils/getFirebaseErrorMessage";
 
 type Session = {
   id: string;
@@ -42,33 +43,57 @@ export default function DashboardPage() {
     setError(null);
     const sessionsRef = collection(firestore, "sessions");
     const activeQuery = query(sessionsRef, where("clockOut", "==", null));
-    const unsubscribeSessions = onSnapshot(activeQuery, (snapshot) => {
-      const sessionsData = snapshot.docs.map((doc) => {
-        const raw = doc.data();
-        return {
-          id: doc.id,
-          userName: typeof raw.userName === "string" ? raw.userName : "",
-          lab: typeof raw.lab === "string" ? raw.lab : "",
-          clockIn: raw.clockIn instanceof Timestamp ? raw.clockIn : null,
-          clockOut: raw.clockOut instanceof Timestamp ? raw.clockOut : null
-        } satisfies Session;
-      });
-      setActiveSessions(sessionsData);
-    });
+    const unsubscribeSessions = onSnapshot(
+      activeQuery,
+      (snapshot) => {
+        const sessionsData = snapshot.docs.map((doc) => {
+          const raw = doc.data();
+          return {
+            id: doc.id,
+            userName: typeof raw.userName === "string" ? raw.userName : "",
+            lab: typeof raw.lab === "string" ? raw.lab : "",
+            clockIn: raw.clockIn instanceof Timestamp ? raw.clockIn : null,
+            clockOut: raw.clockOut instanceof Timestamp ? raw.clockOut : null
+          } satisfies Session;
+        });
+        setActiveSessions(sessionsData);
+      },
+      (snapshotError) => {
+        console.warn(snapshotError);
+        setError(
+          getFirebaseErrorMessage(
+            snapshotError,
+            "Unable to load active sessions. Check Firestore permissions."
+          )
+        );
+      }
+    );
 
     const inventoryRef = collection(firestore, "ppe_inventory");
-    const unsubscribeInventory = onSnapshot(inventoryRef, (snapshot) => {
-      const inventoryData = snapshot.docs.map((doc) => {
-        const raw = doc.data();
-        return {
-          id: doc.id,
-          itemName: typeof raw.itemName === "string" ? raw.itemName : "",
-          quantity: typeof raw.quantity === "number" ? raw.quantity : 0,
-          expiryDate: raw.expiryDate instanceof Timestamp ? raw.expiryDate : null
-        } satisfies InventoryItem;
-      });
-      setInventory(inventoryData);
-    });
+    const unsubscribeInventory = onSnapshot(
+      inventoryRef,
+      (snapshot) => {
+        const inventoryData = snapshot.docs.map((doc) => {
+          const raw = doc.data();
+          return {
+            id: doc.id,
+            itemName: typeof raw.itemName === "string" ? raw.itemName : "",
+            quantity: typeof raw.quantity === "number" ? raw.quantity : 0,
+            expiryDate: raw.expiryDate instanceof Timestamp ? raw.expiryDate : null
+          } satisfies InventoryItem;
+        });
+        setInventory(inventoryData);
+      },
+      (snapshotError) => {
+        console.warn(snapshotError);
+        setError(
+          getFirebaseErrorMessage(
+            snapshotError,
+            "Unable to load PPE inventory data. Check Firestore permissions."
+          )
+        );
+      }
+    );
 
     return () => {
       unsubscribeSessions();

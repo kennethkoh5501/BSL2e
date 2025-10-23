@@ -51,30 +51,54 @@ export default function Bsl2eForm() {
 
     setError(null);
     const sessionQuery = query(collection(firestore, "sessions"), where("clockOut", "==", null));
-    const unsubscribeSessions = onSnapshot(sessionQuery, (snapshot) => {
-      const data = snapshot.docs.map((snapshotDoc) => {
-        const raw = snapshotDoc.data();
-        return {
-          id: snapshotDoc.id,
-          userName: typeof raw.userName === "string" ? raw.userName : "",
-          clockOut: raw.clockOut instanceof Timestamp ? raw.clockOut : null
-        } satisfies SessionRecord;
-      });
-      setSessions(data.filter((session) => session.userName));
-    });
+    const unsubscribeSessions = onSnapshot(
+      sessionQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((snapshotDoc) => {
+          const raw = snapshotDoc.data();
+          return {
+            id: snapshotDoc.id,
+            userName: typeof raw.userName === "string" ? raw.userName : "",
+            clockOut: raw.clockOut instanceof Timestamp ? raw.clockOut : null
+          } satisfies SessionRecord;
+        });
+        setSessions(data.filter((session) => session.userName));
+      },
+      (snapshotError) => {
+        console.warn(snapshotError);
+        setError(
+          getFirebaseErrorMessage(
+            snapshotError,
+            "Unable to load active sessions. Check Firestore permissions."
+          )
+        );
+      }
+    );
 
     const rulesRef = collection(firestore, "pathogen_rules");
-    const unsubscribeRules = onSnapshot(rulesRef, (snapshot) => {
-      const data = snapshot.docs.map((snapshotDoc) => {
-        const raw = snapshotDoc.data();
-        return {
-          id: snapshotDoc.id,
-          pathogenA: typeof raw.pathogenA === "string" ? raw.pathogenA : "",
-          pathogenB: typeof raw.pathogenB === "string" ? raw.pathogenB : ""
-        } satisfies PathogenRule;
-      });
-      setRules(data.filter((rule) => rule.pathogenA && rule.pathogenB));
-    });
+    const unsubscribeRules = onSnapshot(
+      rulesRef,
+      (snapshot) => {
+        const data = snapshot.docs.map((snapshotDoc) => {
+          const raw = snapshotDoc.data();
+          return {
+            id: snapshotDoc.id,
+            pathogenA: typeof raw.pathogenA === "string" ? raw.pathogenA : "",
+            pathogenB: typeof raw.pathogenB === "string" ? raw.pathogenB : ""
+          } satisfies PathogenRule;
+        });
+        setRules(data.filter((rule) => rule.pathogenA && rule.pathogenB));
+      },
+      (snapshotError) => {
+        console.warn(snapshotError);
+        setError(
+          getFirebaseErrorMessage(
+            snapshotError,
+            "Unable to load pathogen compatibility rules. Check Firestore permissions."
+          )
+        );
+      }
+    );
 
     return () => {
       unsubscribeSessions();

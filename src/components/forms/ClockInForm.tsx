@@ -54,22 +54,34 @@ export default function ClockInForm() {
     setError(null);
     const sessionsRef = collection(firestore, "sessions");
     const activeQuery = query(sessionsRef, where("clockOut", "==", null));
-    const unsubscribe = onSnapshot(activeQuery, (snapshot) => {
-      const data = snapshot.docs.map((snapshotDoc) => {
-        const raw = snapshotDoc.data();
-        return {
-          id: snapshotDoc.id,
-          userName: typeof raw.userName === "string" ? raw.userName : "",
-          lab: typeof raw.lab === "string" ? raw.lab : "",
-          purpose: typeof raw.purpose === "string" ? raw.purpose : "",
-          signatureUrl:
-            typeof raw.signatureUrl === "string" ? raw.signatureUrl : "",
-          clockIn: raw.clockIn instanceof Timestamp ? raw.clockIn : null,
-          clockOut: raw.clockOut instanceof Timestamp ? raw.clockOut : null
-        } satisfies Session;
-      });
-      setSessions(data);
-    });
+    const unsubscribe = onSnapshot(
+      activeQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((snapshotDoc) => {
+          const raw = snapshotDoc.data();
+          return {
+            id: snapshotDoc.id,
+            userName: typeof raw.userName === "string" ? raw.userName : "",
+            lab: typeof raw.lab === "string" ? raw.lab : "",
+            purpose: typeof raw.purpose === "string" ? raw.purpose : "",
+            signatureUrl:
+              typeof raw.signatureUrl === "string" ? raw.signatureUrl : "",
+            clockIn: raw.clockIn instanceof Timestamp ? raw.clockIn : null,
+            clockOut: raw.clockOut instanceof Timestamp ? raw.clockOut : null
+          } satisfies Session;
+        });
+        setSessions(data);
+      },
+      (snapshotError) => {
+        console.warn(snapshotError);
+        setError(
+          getFirebaseErrorMessage(
+            snapshotError,
+            "Unable to load active sessions. Check Firestore permissions."
+          )
+        );
+      }
+    );
     return () => unsubscribe();
   }, [firestore, firebaseInitError]);
 

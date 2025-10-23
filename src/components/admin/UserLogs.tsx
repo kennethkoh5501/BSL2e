@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseInitializationError, getFirestoreDb } from "@/lib/firebase";
 import { formatTimestamp } from "@/utils/formatTimestamp";
+import { getFirebaseErrorMessage } from "@/utils/getFirebaseErrorMessage";
 
 interface SessionRecord {
   id: string;
@@ -61,58 +62,94 @@ export default function UserLogs() {
 
     setError(null);
     const sessionQuery = query(collection(firestore, "sessions"), orderBy("clockIn", "desc"));
-    const unsubscribeSessions = onSnapshot(sessionQuery, (snapshot) => {
-      const data = snapshot.docs.map((snapshotDoc) => {
-        const raw = snapshotDoc.data();
-        return {
-          id: snapshotDoc.id,
-          userName: typeof raw.userName === "string" ? raw.userName : "",
-          lab: typeof raw.lab === "string" ? raw.lab : "",
-          purpose: typeof raw.purpose === "string" ? raw.purpose : "",
-          clockIn: raw.clockIn instanceof Timestamp ? raw.clockIn : null,
-          clockOut: raw.clockOut instanceof Timestamp ? raw.clockOut : null
-        } satisfies SessionRecord;
-      });
-      setSessions(data);
-    });
+    const unsubscribeSessions = onSnapshot(
+      sessionQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((snapshotDoc) => {
+          const raw = snapshotDoc.data();
+          return {
+            id: snapshotDoc.id,
+            userName: typeof raw.userName === "string" ? raw.userName : "",
+            lab: typeof raw.lab === "string" ? raw.lab : "",
+            purpose: typeof raw.purpose === "string" ? raw.purpose : "",
+            clockIn: raw.clockIn instanceof Timestamp ? raw.clockIn : null,
+            clockOut: raw.clockOut instanceof Timestamp ? raw.clockOut : null
+          } satisfies SessionRecord;
+        });
+        setSessions(data);
+      },
+      (snapshotError) => {
+        console.warn(snapshotError);
+        setError(
+          getFirebaseErrorMessage(
+            snapshotError,
+            "Unable to load session data. Check Firestore permissions."
+          )
+        );
+      }
+    );
 
     const activityQuery = query(collection(firestore, "bsl2e_logs"), orderBy("timestamp", "desc"));
-    const unsubscribeActivities = onSnapshot(activityQuery, (snapshot) => {
-      const data = snapshot.docs.map((snapshotDoc) => {
-        const raw = snapshotDoc.data();
-        const sessionRef =
-          raw.sessionRef && typeof raw.sessionRef === "object" && "id" in raw.sessionRef
-            ? (raw.sessionRef as DocumentReference)
-            : undefined;
+    const unsubscribeActivities = onSnapshot(
+      activityQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((snapshotDoc) => {
+          const raw = snapshotDoc.data();
+          const sessionRef =
+            raw.sessionRef && typeof raw.sessionRef === "object" && "id" in raw.sessionRef
+              ? (raw.sessionRef as DocumentReference)
+              : undefined;
 
-        return {
-          id: snapshotDoc.id,
-          userName: typeof raw.userName === "string" ? raw.userName : "",
-          activity: typeof raw.activity === "string" ? raw.activity : "",
-          pathogens: Array.isArray(raw.pathogens)
-            ? raw.pathogens.filter((item): item is string => typeof item === "string")
-            : [],
-          timestamp: raw.timestamp instanceof Timestamp ? raw.timestamp : null,
-          sessionRef
-        } satisfies ActivityLog;
-      });
-      setActivities(data);
-    });
+          return {
+            id: snapshotDoc.id,
+            userName: typeof raw.userName === "string" ? raw.userName : "",
+            activity: typeof raw.activity === "string" ? raw.activity : "",
+            pathogens: Array.isArray(raw.pathogens)
+              ? raw.pathogens.filter((item): item is string => typeof item === "string")
+              : [],
+            timestamp: raw.timestamp instanceof Timestamp ? raw.timestamp : null,
+            sessionRef
+          } satisfies ActivityLog;
+        });
+        setActivities(data);
+      },
+      (snapshotError) => {
+        console.warn(snapshotError);
+        setError(
+          getFirebaseErrorMessage(
+            snapshotError,
+            "Unable to load activity logs. Check Firestore permissions."
+          )
+        );
+      }
+    );
 
     const ppeQuery = query(collection(firestore, "ppe_logs"), orderBy("timestamp", "desc"));
-    const unsubscribePpe = onSnapshot(ppeQuery, (snapshot) => {
-      const data = snapshot.docs.map((snapshotDoc) => {
-        const raw = snapshotDoc.data();
-        return {
-          id: snapshotDoc.id,
-          userName: typeof raw.userName === "string" ? raw.userName : "",
-          itemName: typeof raw.itemName === "string" ? raw.itemName : "",
-          quantity: typeof raw.quantity === "number" ? raw.quantity : 0,
-          timestamp: raw.timestamp instanceof Timestamp ? raw.timestamp : null
-        } satisfies PpeLog;
-      });
-      setPpe(data);
-    });
+    const unsubscribePpe = onSnapshot(
+      ppeQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((snapshotDoc) => {
+          const raw = snapshotDoc.data();
+          return {
+            id: snapshotDoc.id,
+            userName: typeof raw.userName === "string" ? raw.userName : "",
+            itemName: typeof raw.itemName === "string" ? raw.itemName : "",
+            quantity: typeof raw.quantity === "number" ? raw.quantity : 0,
+            timestamp: raw.timestamp instanceof Timestamp ? raw.timestamp : null
+          } satisfies PpeLog;
+        });
+        setPpe(data);
+      },
+      (snapshotError) => {
+        console.warn(snapshotError);
+        setError(
+          getFirebaseErrorMessage(
+            snapshotError,
+            "Unable to load PPE logs. Check Firestore permissions."
+          )
+        );
+      }
+    );
 
     return () => {
       unsubscribeSessions();
