@@ -146,6 +146,9 @@ npm run build
 
 Log any remaining `403 Forbidden - GET https://...` errors so proxy configuration can be adjusted.
 
+`npm run build` uses Next.js static export mode and writes the compiled site to the `out/` directory. Keep that folder out of
+source control (it is already listed in `.gitignore`) and reference `out` as the public directory for Firebase Hosting.
+
 ## Automated Build + Deploy Pipeline
 
 Run the bundled automation script to apply the troubleshooting flow, validate the build, and deploy to Firebase Hosting in a single step:
@@ -154,4 +157,4 @@ Run the bundled automation script to apply the troubleshooting flow, validate th
 npm run pipeline
 ```
 
-The script mirrors the A–F procedure above: it audits the active registry, captures diagnostics, attempts npm/pnpm/yarn installs with public mirrors, and provides guidance for manual `node_modules` extraction if networking remains blocked before running the Firebase deployment checks.
+The script mirrors the A–F procedure above: it audits the active registry, captures diagnostics, attempts npm/pnpm/yarn installs with public mirrors, and provides guidance for manual `node_modules` extraction if networking remains blocked before running the Firebase deployment checks. When all tooling succeeds it verifies that the static export directory `out/` exists, enforces a Firebase Hosting configuration that serves from `out`, and then executes `firebase deploy --only hosting`.

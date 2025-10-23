@@ -146,6 +146,11 @@ if ! npm run build >/dev/null 2>&1; then
   echo "npm run build did not complete successfully. Review the output above." >&2
 fi
 
+if [[ ! -d out ]]; then
+  echo "Next.js build did not produce an 'out' directory. Ensure next.config.mjs sets output: \"export\"." >&2
+  exit 1
+fi
+
 log_step "Preparing Firebase CLI"
 if ! command -v firebase >/dev/null 2>&1; then
   npm install -g firebase-tools >/dev/null 2>&1 || {
@@ -163,7 +168,7 @@ if [[ ! -f firebase.json ]]; then
   cat > firebase.json <<'JSON'
 {
   "hosting": {
-    "public": "build",
+    "public": "out",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [{ "source": "**", "destination": "/index.html" }]
   }
